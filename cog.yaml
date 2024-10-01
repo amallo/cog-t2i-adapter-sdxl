@@ -2,12 +2,11 @@ build:
   gpu: true
   system_packages:
     - "python3-opencv"
-  cuda: "11.7"
-  python_version: "3.9"
+  python_version: "3.11"
   python_packages:
-    - "torch==2.0.0"
+    - "torch==2.3.0"
     - "torchvision"
-    - "git+https://github.com/huggingface/diffusers.git"
+    - "diffusers"
     - "controlnet_aux==0.0.7"
     - "mediapipe"
     - "transformers"

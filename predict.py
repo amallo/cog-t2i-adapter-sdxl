@@ -16,7 +16,7 @@ from utils import SCHEDULERS, install_t2i_adapter_cache
 os.environ["HF_HOME"] = os.environ["HUGGINGFACE_HUB_CACHE"] = "/src/hf-cache"
 
 # Available options: "openpose", "lineart", "canny", "sketch", "depth-midas"
-MODEL_TYPE = "depth-midas" 
+MODEL_TYPE = "canny" 
 
 MODEL_BASE_CACHE = "/src/hf-cache/sdxl-1.0"
 MODEL_ADAPTER_CACHE = f"/src/hf-cache/t2-adapter-{MODEL_TYPE}-sdxl-1.0"
@@ -61,9 +61,7 @@ class Predictor(BasePredictor):
             ).to("cuda")
 
         # Load the pipeline
-        vae = AutoencoderKL.from_pretrained(
-            MODEL_VAE_CACHE, torch_dtype=torch.float16, local_files_only=True
-        )
+       
 
         adapter = T2IAdapter.from_pretrained(
             MODEL_ADAPTER_CACHE, torch_dtype=torch.float16, varient="fp16", local_files_only=True
@@ -73,7 +71,6 @@ class Predictor(BasePredictor):
 
         self.pipe = StableDiffusionXLAdapterPipeline.from_pretrained(
             MODEL_BASE_CACHE, 
-            vae=vae, 
             adapter=adapter, 
             scheduler=euler_a,
             torch_dtype=torch.float16, 
@@ -87,7 +84,7 @@ class Predictor(BasePredictor):
         image: Path = Input(description="Input image"),
         prompt: str = Input(
             description="Input prompt",
-            default="A photo of a room, 4k photo, highly detailed",
+            default="turn to a post apocalyptic photo, 4k photo, highly detailed",
         ),
         negative_prompt: str = Input(
             description="Specify things to not see in the output",
