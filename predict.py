@@ -23,6 +23,8 @@ MODEL_ADAPTER_CACHE = f"/src/hf-cache/t2-adapter-{MODEL_TYPE}-sdxl-1.0"
 MODEL_VAE_CACHE = "/src/hf-cache/sdxl-vae-fp16-fix"
 MODEL_SCHEDULER_CACHE = "/src/hf-cache/scheduler"
 MODEL_ANNOTATOR_CACHE = f"/src/hf-cache/annotator/{MODEL_TYPE}"
+MODEL_LORA_CACHE = "/src/hf-cache/lora"
+
 
 install_t2i_adapter_cache(
     model_type=MODEL_TYPE,
@@ -31,6 +33,7 @@ install_t2i_adapter_cache(
     model_vae_cache=MODEL_VAE_CACHE,
     model_adapter_cache=MODEL_ADAPTER_CACHE,
     model_annotator_cache=MODEL_ANNOTATOR_CACHE,
+    model_lora_cache=MODEL_LORA_CACHE
 )
 
 class Predictor(BasePredictor):
@@ -76,7 +79,7 @@ class Predictor(BasePredictor):
             torch_dtype=torch.float16, 
             variant="fp16",
         ).to("cuda")
-        
+        self.pipe.load_lora_weights(MODEL_LORA_CACHE+ "/lora.safetensors")
         self.pipe.enable_xformers_memory_efficient_attention()
 
     def predict(
@@ -101,6 +104,9 @@ class Predictor(BasePredictor):
         ),
         guidance_scale: float = Input(
             description="Guidance scale to match the prompt", ge=0, le=10.0, default=7.5
+        ),
+        lora_scale: float = Input(
+            description="Lora scale to match the prompt", ge=0, le=1.0, default=0.5
         ),
         num_samples: int = Input(
             description="Number of outputs to generate", ge=1, le=4, default=1
@@ -131,7 +137,7 @@ class Predictor(BasePredictor):
             image = Image.fromarray(np.uint8(image)) 
         elif MODEL_TYPE == "depth-midas":
             image = self.annotator(image, detect_resolution=512, image_resolution=1024)
-
+        self.pipe.fuse_lora(lora_scale=lora_scale)
         output = self.pipe(
             prompt=prompt,
             negative_prompt=negative_prompt,
